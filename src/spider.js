@@ -368,6 +368,35 @@ class Spider {
 
 	}
 
+	async takeListingFullScreenShot(page, asin) {
+
+		// let logger
+		// try {
+		//
+		// 	const pathScreenshots = await this.getEnvironmentPath()
+		// 	const fileName = `${asin}_${moment()
+		// 		.tz('America/Los_Angeles')
+		// 		.format('DD-MM-YY')}.jpeg`
+		//
+		// 	await page.screenshot({
+		// 		path: path.join(pathScreenshots, 'screenshots', fileName),
+		// 		type: 'jpeg',
+		// 		quality: 50,
+		// 		fullPage: true,
+		// 	})
+		//
+		// 	return true
+		//
+		// } catch (error) {
+		//
+		// 	logger.error(error)
+		//
+		// 	return false
+		//
+		// }
+
+	}
+
 }
 
 module.exports = Spider
