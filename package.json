@@ -1,0 +1,41 @@
+{
+  "name": "spidering",
+  "version": "0.0.10",
+  "description": "Crawl the internet",
+  "keywords": [],
+  "author": "robot",
+  "engines": {
+    "node": ">=12"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "download": "^7.1.0",
+    "json-find": "latest",
+    "jsonfile": "latest",
+    "lowdb": "latest",
+    "mkdirp": "latest",
+    "moment-timezone": "latest",
+    "puppeteer": "latest",
+    "puppeteer-extra": "latest",
+    "puppeteer-extra-plugin-anonymize-ua": "latest",
+    "puppeteer-extra-plugin-stealth": "latest",
+    "request": "^2.88.0",
+    "rimraf": "latest",
+    "shelljs": "latest",
+    "winston": "latest"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.3",
+    "eslint-config-node-script-js": "latest",
+    "eslint-plugin-import": "^2.20.1"
+  },
+  "main": "app/spider.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lincolnaleixo/spidering"
+  },
+  "bugs": {
+    "url": "https://github.com/lincolnaleixo/spidering/issues"
+  },
+  "homepage": "https://github.com/lincolnaleixo/spidering#readme"
+}
