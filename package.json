@@ -4,6 +4,7 @@
   "description": "Crawl the internet",
   "keywords": [],
   "author": "robot",
+  "license": "GPL-3.0",
   "engines": {
     "node": ">=12"
   },
