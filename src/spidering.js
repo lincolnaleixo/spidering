@@ -13,7 +13,7 @@ const moment = require('moment-timezone')
 
 class Spidering {
 
-	constructor(env, withProxy = false) {
+	constructor(env) {
 
 		dotenv.config()
 
@@ -31,21 +31,6 @@ class Spidering {
 		this.cookiesPath = `${this.dir}/cookies/browserCookies`
 		this.browser = ''
 		this.page = ''
-		this.args = [
-			'--disable-gpu',
-			'--disable-setuid-sandbox',
-			'--disable-dev-shm-usage',
-			'--force-device-scale-factor',
-			'--ignore-certificate-errors',
-			'--no-sandbox',
-			'--mute-audio',
-			'--disable-translate',
-			'--disable-features=site-per-process',
-			'--window-size=1920,1080',
-
-		]
-		const proxy = this.getRandomProxy()
-		if (withProxy) this.args.push(`--proxy-server=${proxy}`)
 
 	}
 
@@ -80,7 +65,23 @@ class Spidering {
 
 	}
 
-	async createBrowser() {
+	async createBrowser(withProxy = false) {
+
+		this.args = [
+			'--disable-gpu',
+			'--disable-setuid-sandbox',
+			'--disable-dev-shm-usage',
+			'--force-device-scale-factor',
+			'--ignore-certificate-errors',
+			'--no-sandbox',
+			'--mute-audio',
+			'--disable-translate',
+			'--disable-features=site-per-process',
+			'--window-size=1920,1080',
+
+		]
+		const proxy = this.getRandomProxy()
+		if (withProxy) this.args.push(`--proxy-server=${proxy}`)
 
 		this.browser = await puppeteer.launch({
 			headless: !this.isDevelopmentEnv,
