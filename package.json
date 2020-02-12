@@ -1,6 +1,6 @@
 {
   "name": "spidering",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Crawl the internet",
   "keywords": [],
   "author": "robot",
@@ -15,18 +15,21 @@
     "lowdb": "latest",
     "mkdirp": "latest",
     "moment-timezone": "^0.5.27",
+    "node-fetch": "^2.6.0",
+    "proxy-lists": "^1.20.1",
     "puppeteer": "latest",
     "puppeteer-extra": "latest",
     "puppeteer-extra-plugin-anonymize-ua": "latest",
     "puppeteer-extra-plugin-stealth": "latest",
+    "random-js": "^2.1.0",
     "rimraf": "latest",
     "shelljs": "latest",
+    "user-agents": "^1.0.530",
+    "useragent": "^2.3.0",
     "winston": "latest"
   },
   "devDependencies": {
-    "babel-eslint": "^10.0.3",
-    "eslint-config-node-script-js": "latest",
-    "eslint-plugin-import": "^2.20.1"
+    "eslint-config-node-script-js": "^1.0.4"
   },
   "main": "src/spidering.js",
   "repository": {

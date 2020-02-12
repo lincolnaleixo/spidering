@@ -5,28 +5,15 @@ const jsonfile = require('jsonfile')
 const fs = require('fs')
 const download = require('download')
 const dotenv = require('dotenv')
+const UserAgent = require('user-agents')
+const { Random } = require('random-js')
 
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds))
 const moment = require('moment-timezone')
 
-const args = [
-	'--disable-gpu',
-	'--disable-setuid-sandbox',
-	'--disable-dev-shm-usage',
-	'--force-device-scale-factor',
-	'--ignore-certificate-errors',
-	'--no-sandbox',
-	'--mute-audio',
-	'--disable-translate',
-	'--disable-features=site-per-process',
-	'--window-size=1920,1080',
-]
-
-const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36'
-
 class Spidering {
 
-	constructor(env) {
+	constructor(env, withProxy = false) {
 
 		dotenv.config()
 
@@ -44,6 +31,21 @@ class Spidering {
 		this.cookiesPath = `${this.dir}/cookies/browserCookies`
 		this.browser = ''
 		this.page = ''
+		this.args = [
+			'--disable-gpu',
+			'--disable-setuid-sandbox',
+			'--disable-dev-shm-usage',
+			'--force-device-scale-factor',
+			'--ignore-certificate-errors',
+			'--no-sandbox',
+			'--mute-audio',
+			'--disable-translate',
+			'--disable-features=site-per-process',
+			'--window-size=1920,1080',
+
+		]
+		const proxy = this.getRandomProxy()
+		if (withProxy) this.args.push(`--proxy-server=${proxy}`)
 
 	}
 
@@ -88,7 +90,7 @@ class Spidering {
 			slowMo: 250,
 			timeout: this.isDevelopmentEnv ? 10000 : 60000,
 			defaultViewport: null,
-			args,
+			args: this.args,
 		})
 
 	}
@@ -158,14 +160,7 @@ class Spidering {
 			downloadPath: this.downloadPath,
 		})
 
-		// const min = 0
-		// const max = desktopUserAgents.length
-		// const random = parseInt(Math.random() * (+max - +min) + +min, 10)
-
-		await this.page.setUserAgent(userAgent)
-
-		// if (userAgentType === 'desktop') await this.page.setUserAgent(desktopUserAgents[random])
-		// else await this.page.setUserAgent(mobileUserAgents[random])
+		await this.setRandomUserAgent()
 
 	}
 
@@ -216,6 +211,40 @@ class Spidering {
 			return false
 
 		}
+
+	}
+
+	async setRandomUserAgent() {
+
+		// TODO only chrome desktop now supported
+		const userAgent = new UserAgent([
+			/Chrome/, {
+				connection: { type: 'wifi' },
+				deviceCategory: 'desktop',
+			},
+		])
+
+		await this.page.setUserAgent(userAgent.data.userAgent)
+
+	}
+
+	getRandomProxy() {
+
+		// TODO use the new library PROXY
+
+		const proxyList = [
+			'socks4://24.172.225.122:3629',
+			'socks4://173.95.52.188:30756',
+			'165.22.36.112:3128',
+			'socks4://198.23.143.25:1080',
+		]
+
+		const random = new Random() // uses the nativeMath engine
+		const key = random.integer(0, 3)
+
+		console.log(`Using proxy ${proxyList[key]}`)
+
+		return proxyList[key]
 
 	}
 
