@@ -12,7 +12,6 @@ resources
 build/
 out
 template
-tests
 docs/templates
 .gitignore
 .gitattributes
