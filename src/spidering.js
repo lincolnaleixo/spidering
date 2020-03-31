@@ -1,3 +1,5 @@
+// @ts-check
+/* eslint-disable node/no-unpublished-require */
 const puppeteer = require('puppeteer-extra')
 const pluginStealth = require('puppeteer-extra-plugin-stealth')
 const pluginUA = require('puppeteer-extra-plugin-anonymize-ua')
@@ -8,31 +10,36 @@ const UserAgent = require('user-agents')
 const { Random } = require('random-js')
 const moment = require('moment-timezone')
 const cawer = require('cawer')
-const Logger = require('./logger.js')
+const Logger = require('../lib/logger.js')
+const defaults = require('../resources/defaults.json')
 
 class Spidering {
 
 	constructor() {
 
-		// dotenv.config()
+		process.env = defaults.environment
+
+		this.createDefaultFolders()
 
 		puppeteer.use(pluginStealth())
 		puppeteer.use(pluginUA())
 
 		const logger = new Logger('spidering')
 
-		this.isDevelopmentEnv = process.env.ENVIROMENT === 'DEVELOPMENT'
-		this.dir = '.'
-		this.downloadPath = `${this.dir}/downloads`
-		this.typeOptions = [
-			'full',
-			'clean',
-			'veryClean',
-		]
-		this.cookiesPath = `${this.dir}/cookies/browserCookies`
+		this.isDevelopmentEnv = process.env === 'DEVELOPMENT'
 		this.browser = ''
 		this.page = ''
 		this.logger = logger.get()
+
+	}
+
+	createDefaultFolders() {
+
+		for (const folder of defaults.necessaryFolders) {
+
+			if (!fs.existsSync(folder)) fs.mkdirSync(folder)
+
+		}
 
 	}
 
@@ -73,23 +80,11 @@ class Spidering {
 
 	async createBrowser(proxy) {
 
-		this.args = [
-			'--disable-gpu',
-			'--disable-setuid-sandbox',
-			'--disable-dev-shm-usage',
-			'--force-device-scale-factor',
-			'--ignore-certificate-errors',
-			'--no-sandbox',
-			'--mute-audio',
-			'--disable-translate',
-			'--disable-features=site-per-process',
-			'--window-size=1920,1080',
-
-		]
+		this.logger.debug('Creating browser')
 
 		if (proxy) {
 
-			this.args.push(`--proxy-server=${proxy}`)
+			defaults.chromeArgs.push(`--proxy-server=${proxy}`)
 			this.logger.info(`Using proxy ${proxy}`)
 
 		}
@@ -102,77 +97,120 @@ class Spidering {
 			slowMo: 250,
 			timeout: this.isDevelopmentEnv ? 10000 : 60000,
 			defaultViewport: null,
-			args: this.args,
+			args: defaults.chromeArgs,
 		})
 
 	}
 
-	async createPage() {
+	async createPage(pageType) {
 
+		this.logger.debug('Creating page')
 		this.page = await this.browser.newPage()
-		await this.setPageParameters()
+		await this.setPageParameters(pageType)
 
 	}
 
-	async setPageParameters() {
+	async setCleanParameters() {
 
+		await this.page.setRequestInterception(true)
+
+		this.page.on('request', (request) => {
+
+			if (request.resourceType() === 'image' || request.resourceType() === 'font') {
+
+				request.abort()
+
+			} else {
+
+				request.continue()
+
+			}
+
+		})
+
+	}
+
+	async setVeryCleanParameters() {
+
+		await this.page.setRequestInterception(true)
+
+		this.page.on('request', (request) => {
+
+			if (request.resourceType() === 'image' || request.resourceType() === 'script'
+						|| request.resourceType() === 'stylesheet' || request.resourceType() === 'font') {
+
+				request.abort()
+
+			} else {
+
+				request.continue()
+
+			}
+
+		})
+
+	}
+
+	async setPageParameters(pageType) {
+
+		this.logger.debug(`Using page type: ${pageType}`)
 		this.page.on('dialog', async (dialog) => {
 
 			await dialog.accept()
 
 		})
-		if (this.type === 'clean') {
+		if (pageType === 'clean') {
 
-			await this.page.setRequestInterception(true)
+			await this.setCleanParameters()
 
-			this.page.on('request', (request) => {
+		} else if (pageType === 'veryClean') {
 
-				if (
-					request.resourceType() === 'image'
-						|| request.resourceType() === 'font'
-				) {
-
-					request.abort()
-
-				} else {
-
-					request.continue()
-
-				}
-
-			})
-
-		} else if (this.type === 'veryClean') {
-
-			await this.page.setRequestInterception(true)
-
-			this.page.on('request', (request) => {
-
-				if (
-					request.resourceType() === 'image'
-						|| request.resourceType() === 'script'
-						|| request.resourceType() === 'stylesheet'
-						|| request.resourceType() === 'font'
-				) {
-
-					request.abort()
-
-				} else {
-
-					request.continue()
-
-				}
-
-			})
+			await this.setVeryCleanParameters()
 
 		}
 
 		await this.page._client.send('Page.setDownloadBehavior', {
 			behavior: 'allow',
-			downloadPath: this.downloadPath,
+			downloadPath: defaults.downloadPath,
 		})
 
 		await this.setRandomUserAgent()
+
+	}
+
+	async handleNavigateToErrors(url, err) {
+
+		const sleepOfflineSeconds = 60
+		const sleepTunnelSeconds = 30
+		const defaultSleeping = 15
+
+		this.takeScreenshot(true)
+
+		if (err.message.indexOf('net::ERR_INTERNET_DISCONNECTED') > -1) {
+
+			this.logger.error(`Seems that this computer is offline, sleeping for ${sleepOfflineSeconds} and trying again`)
+			await cawer.sleep(sleepOfflineSeconds)
+
+		} else if (err.message.indexOf('net::ERR_TUNNEL_CONNECTION_FAILED') > -1) {
+
+			this.logger.error(`Could not connect to the url ${url}, sleeping for ${sleepTunnelSeconds} and trying again`)
+			await cawer.sleep(sleepTunnelSeconds)
+
+		} else if (err.message.indexOf('net::ERR_NAME_NOT_RESOLVED') > -1) {
+
+			this.logger.error(`Could not resolve the url ${url}, sleeping for ${defaultSleeping} and trying again`)
+			await cawer.sleep(defaultSleeping)
+
+		} else {
+
+			this.logger.error(`Error on navigateTo url ${url}: ${err}`)
+			this.takeScreenshot(true)
+
+			return false
+
+		}
+
+		return true
 
 	}
 
@@ -180,6 +218,7 @@ class Spidering {
 
 		try {
 
+			this.url = url
 			this.logger.info(`Navigating to url: ${url}`)
 
 			const response = await this.page.goto(url, { waitUntil: [
@@ -192,11 +231,7 @@ class Spidering {
 
 				const headers = response.headers()
 
-				if (headers.status === '200') {
-
-					return true
-
-				}
+				if (headers.status === '200') return true
 
 				this.logger.error(`Error on getting the page contents. Response status: ${headers.status}`)
 
@@ -204,26 +239,18 @@ class Spidering {
 
 			}
 
+			const bytesReceived = await this.getTotalBytesReceived()
+			this.logger.debug(`Total bytes received: ${bytesReceived}`)
+
 			return true
 
 		} catch (err) {
 
-			this.logger.error(`Error on navigateTo url ${url}: ${err}`)
-
-			// TODO implment taking screenshot on error
-			// const pathToSaveScreenshot = `./logs/screenshots/${await moment()
-			// 	.format('YYYY-MM-DDTHH-mm-ss-SSS')}_error.png`
-
-			// await this.page.screenshot({
-			// 	path: pathToSaveScreenshot,
-			// 	fullPage: true,
-			// })
-
-			// this.logger.notice(`Screenshot saved: ${pathToSaveScreenshot}`)
-
-			return false
+			if (this.handleNavigateToErrors(url, err)) this.navigateTo(url, postBack)
 
 		}
+
+		return false
 
 	}
 
@@ -265,7 +292,7 @@ class Spidering {
 
 		} catch (err) {
 
-			this.logger.error(`Error on click: ${err}, taking screenshot`)
+			this.logger.error(`Error on click: ${err}`)
 			this.takeScreenshot(true)
 
 		}
@@ -289,7 +316,7 @@ class Spidering {
 
 		} catch (err) {
 
-			this.logger.error(`Error on hover: ${err}, taking screenshot`)
+			this.logger.error(`Error on hover: ${err}`)
 			this.takeScreenshot(true)
 
 		}
@@ -318,7 +345,7 @@ class Spidering {
 
 		} catch (err) {
 
-			this.logger.error(`Error on typeInput: ${err}, taking screenshot`)
+			this.logger.error(`Error on typeInput: ${err}`)
 			this.takeScreenshot(true)
 
 		}
@@ -328,6 +355,28 @@ class Spidering {
 	async reload() {
 
 		await this.navigateTo(this.page.url())
+
+	}
+
+	async getTotalBytesReceived() {
+
+		try {
+
+			const result = await this.page.evaluate(() => JSON.stringify(performance.getEntries()))
+			const bytesReceived = cawer.formatBytes((JSON.parse(result))
+				.reduce((total, item) => total + (item.transferSize !== undefined ? item.transferSize : 0), 0))
+
+			return bytesReceived
+
+		} catch (err) {
+
+			this.logger.error(`Error on getPerformanceEntries: ${err}`)
+
+			this.takeScreenshot(true)
+
+		}
+
+		return false
 
 	}
 
@@ -358,17 +407,20 @@ class Spidering {
 
 		} catch (err) {
 
-			this.logger.error(`Error on elementToEvaluate: ${err}, taking screenshot`)
+			this.logger.error(`Error on elementToEvaluate: ${err}`)
 
-			this.takeScreenshot(true)
+			await this.takeScreenshot(true)
+			await this.saveFullHtmlContent(true)
 
 		}
+
+		return false
 
 	}
 
 	downloadFile(url) {
 
-		download(url, this.downloadPath)
+		download(url, defaults.downloadPath)
 			.then(() => {
 
 				this.logger.notice('done downloading!')
@@ -386,35 +438,6 @@ class Spidering {
 
 	}
 
-	async takeListingFullScreenShot(page, asin) {
-
-		// let logger
-		// try {
-		//
-		// 	const pathScreenshots = await this.getEnvironmentPath()
-		// 	const fileName = `${asin}_${moment()
-		// 		.tz('America/Los_Angeles')
-		// 		.format('DD-MM-YY')}.jpeg`
-		//
-		// 	await page.screenshot({
-		// 		path: path.join(pathScreenshots, 'screenshots', fileName),
-		// 		type: 'jpeg',
-		// 		quality: 50,
-		// 		fullPage: true,
-		// 	})
-		//
-		// 	return true
-		//
-		// } catch (error) {
-		//
-		// 	logger.error(error)
-		//
-		// 	return false
-		//
-		// }
-
-	}
-
 	async scrollPage(scrollCount) {
 
 		while (true) {
@@ -424,7 +447,7 @@ class Spidering {
 				for (let i = 0; i < scrollCount; i += 1) {
 
 					console.log(`[${i + 1}/${scrollCount}] scrolling...`)
-					await this.page.evaluate((_) => {
+					await this.page.evaluate(() => {
 
 						window.scrollBy(0, window.innerHeight)
 						window.scrollTo(0, document.body.scrollHeight)
@@ -448,7 +471,12 @@ class Spidering {
 
 	}
 
-	async takeScreenshot(isError = false, path) {
+	async takeScreenshot(isError = false, path = undefined) {
+
+		this.logger.warn('Taking screenshot...')
+
+		const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
+		const domain = matches && matches[1]
 
 		const todayDate = await moment()
 			.format('YYYY-MM-DDTHH-mm-ss-SSS')
@@ -457,13 +485,8 @@ class Spidering {
 		if (isError) {
 
 			const folderPath = process.mainModule.paths[0].split('node_modules')[0].slice(0, -1)
-			const dir1 = 'logs'
-			const screenshotsDir = `${dir1}/screenshots`
 
-			if (!fs.existsSync(dir1)) fs.mkdirSync(dir1)
-			if (!fs.existsSync(screenshotsDir)) fs.mkdirSync(screenshotsDir)
-
-			pathToSaveScreenshot = `${folderPath}/../${screenshotsDir}/${todayDate}_error.png`
+			pathToSaveScreenshot = `${folderPath}/../${defaults.screenshotsDir}/${domain}_${todayDate}_error.png`
 
 		} else {
 
@@ -477,6 +500,37 @@ class Spidering {
 		})
 
 		this.logger.warn(`Screenshot saved: ${pathToSaveScreenshot}`)
+
+	}
+
+	async saveFullHtmlContent(isError = false, path = undefined) {
+
+		this.logger.warn('Saving full html content...')
+
+		const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
+		const domain = matches && matches[1]
+
+		const bodyHTML = await this.page.evaluate(() => document.body.innerHTML)
+
+		const todayDate = await moment()
+			.format('YYYY-MM-DDTHH-mm-ss-SSS')
+		let pathToSaveHTML = ''
+
+		if (isError) {
+
+			const folderPath = process.mainModule.paths[0].split('node_modules')[0].slice(0, -1)
+
+			pathToSaveHTML = `${folderPath}/../${defaults.fullHTMLDir}/${domain}_${todayDate}.txt`
+
+		} else {
+
+			pathToSaveHTML = `${path}/${todayDate}_error.png`
+
+		}
+
+		fs.writeFileSync(pathToSaveHTML, bodyHTML)
+
+		this.logger.warn(`Full HTML saved: ${pathToSaveHTML}`)
 
 	}
 

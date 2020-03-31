@@ -1,0 +1,35 @@
+{
+	"environment": "DEVELOPMENT",
+	"downloadPath": "./downloads",
+	"pageTypeOptions": [
+		"full",
+		"clean",
+		"veryClean"
+	],
+	"cookiesPath": "./cookies/browserCookies",
+	"necessaryFolders": [
+		"logs",
+		"logs/screenshots",
+		"logs/fullHTML"
+	],
+	"screenshotsDir": "logs/screenshots",
+	"fullHTMLDir": "logs/fullHTML",
+	"chromeArgs": [
+		"--disable-gpu",
+		"--disable-setuid-sandbox",
+		"--disable-dev-shm-usage",
+		"--force-device-scale-factor",
+		"--ignore-certificate-errors",
+		"--no-sandbox",
+		"--mute-audio",
+		"--disable-translate",
+		"--disable-features=site-per-process",
+		"--window-size=1920,1080",
+		"--disable-prompt-on-repost",
+		"--no-first-run",
+		"--disable-infobars",
+		"--disable-ipc-flooding-protection",
+		"--disable-background-timer-throttling",
+		"--disable-popup-blocking"
+	]
+}

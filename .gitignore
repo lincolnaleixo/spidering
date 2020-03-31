@@ -8,7 +8,6 @@ database
 dist
 logs
 node_modules
-resources
 build/
 out
 template
@@ -111,9 +110,9 @@ typings/
 # End of https://www.gitignore.io/api/node
 .DS_Store
 temp/
-src/old_spider.js
 yarn.lock
 .eslintrc
 package-lock.json
 !/.gitignore
 !/.gitattributes
+.gitignore

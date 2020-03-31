@@ -39,17 +39,18 @@ const Spider = require('../src/spidering');
 	// 	})
 	//
 	// console.log(proxiesToUse)
-
-	process.env.ENVIROMENT = 'DEVELOPMENT'
-
+	const pageType = 'clean'
 	const spider = new Spider()
 
 	// const proxy = 'socks4://24.172.225.122:3629'
 
+	const url = 'https://www.amazon.com/'
+
 	await spider.createBrowser()
-	await spider.createPage()
-	await spider.navigateTo('https://www.google.com/')
-	await spider.typeInput('input[name="q"]', 'testing', 4000)
+	await spider.createPage(pageType)
+	await spider.navigateTo(url)
+	// await spider.evaluate('elementToEvaluate', '123')
+	// await spider.typeInput('input[name="q"]', 'testing', 4000)
 	// await spider.navigateTo('https://intoli.com/blog/not-possible-to-block-chrome-headless/chrome-headless-test.html')
 
 	// const userAgent = spider.getRandomUserAgent()
