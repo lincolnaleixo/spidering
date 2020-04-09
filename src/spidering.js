@@ -90,9 +90,9 @@ class Spidering {
 		}
 
 		this.browser = await puppeteer.launch({
-			headless: this.isDevelopmentEnv,
-			devtools: !this.isDevelopmentEnv,
-			dumpio: !this.isDevelopmentEnv,
+			headless: !this.isDevelopmentEnv,
+			devtools: this.isDevelopmentEnv,
+			dumpio: this.isDevelopmentEnv,
 			ignoreHTTPSErrors: !this.isDevelopmentEnv,
 			slowMo: 250,
 			timeout: this.isDevelopmentEnv ? 10000 : 60000,
