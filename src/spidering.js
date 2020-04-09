@@ -17,7 +17,8 @@ class Spidering {
 
 	constructor() {
 
-		process.env = defaults.environment
+		if (process.env.NODE_ENV === undefined) process.env.NODE_ENV = defaults.environment
+		this.isDevelopmentEnv = process.env === 'DEVELOPMENT'
 
 		this.createDefaultFolders()
 
@@ -26,7 +27,6 @@ class Spidering {
 
 		const logger = new Logger('spidering')
 
-		this.isDevelopmentEnv = process.env === 'DEVELOPMENT'
 		this.browser = ''
 		this.page = ''
 		this.logger = logger.get()
@@ -90,9 +90,9 @@ class Spidering {
 		}
 
 		this.browser = await puppeteer.launch({
-			headless: !this.isDevelopmentEnv,
-			devtools: false,
-			dumpio: this.isDevelopmentEnv,
+			headless: this.isDevelopmentEnv,
+			devtools: !this.isDevelopmentEnv,
+			dumpio: !this.isDevelopmentEnv,
 			ignoreHTTPSErrors: !this.isDevelopmentEnv,
 			slowMo: 250,
 			timeout: this.isDevelopmentEnv ? 10000 : 60000,
