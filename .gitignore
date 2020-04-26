@@ -116,3 +116,5 @@ package-lock.json
 !/.gitignore
 !/.gitattributes
 .gitignore
+scripts/publish.sh
+meta/version.txt
