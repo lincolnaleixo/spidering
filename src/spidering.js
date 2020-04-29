@@ -317,7 +317,7 @@ class Spidering {
 
 			return evaluateResult
 		} catch (err) {
-			this.logger.error(`Error on elementToEvaluate: ${err}`)
+			this.logger.error(`Error on evaluate: ${err}`)
 
 			await this.takeScreenshot(true)
 			await this.saveFullHtmlContent(true)
@@ -362,51 +362,59 @@ class Spidering {
 	}
 
 	async takeScreenshot(isError = false, path = undefined) {
-		this.logger.warn('Taking screenshot...')
+		try {
+			this.logger.warn('Taking screenshot...')
 
-		const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
-		const domain = matches && matches[1]
-		const todayDate = await moment()
-			.format('YYYY-MM-DDTHH-mm-ss-SSS')
-		let pathToSaveScreenshot = ''
+			const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
+			const domain = matches && matches[1]
+			const todayDate = await moment()
+				.format('YYYY-MM-DDTHH-mm-ss-SSS')
+			let pathToSaveScreenshot = ''
 
-		if (isError) {
-			const folderPath = process.mainModule.paths[0].split('node_modules')[0].slice(0, -1)
+			if (isError) {
+				const folderPath = process.mainModule.paths[0].split('node_modules')[0].slice(0, -1)
 
-			pathToSaveScreenshot = `${folderPath}/../${defaults.screenshotsDir}/${domain}_${todayDate}_error.png`
-		} else {
-			pathToSaveScreenshot = `${path}/${todayDate}_error.png`
+				pathToSaveScreenshot = `${folderPath}/../${defaults.screenshotsDir}/${domain}_${todayDate}_error.png`
+			} else {
+				pathToSaveScreenshot = `${path}/${todayDate}_error.png`
+			}
+
+			await this.page.screenshot({
+				path: pathToSaveScreenshot,
+				fullPage: true,
+			})
+
+			this.logger.warn(`Screenshot saved: ${pathToSaveScreenshot}`)
+		} catch (err) {
+			this.logger.error(`Error on takeScreenshot: ${err}`)
 		}
-
-		await this.page.screenshot({
-			path: pathToSaveScreenshot,
-			fullPage: true,
-		})
-
-		this.logger.warn(`Screenshot saved: ${pathToSaveScreenshot}`)
 	}
 
 	async saveFullHtmlContent(isError = false, path = undefined) {
-		this.logger.warn('Saving full html content...')
+		try {
+			this.logger.warn('Saving full html content...')
 
-		const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
-		const domain = matches && matches[1]
-		const bodyHTML = await this.page.evaluate(() => document.body.innerHTML)
-		const todayDate = await moment()
-			.format('YYYY-MM-DDTHH-mm-ss-SSS')
-		let pathToSaveHTML = ''
+			const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
+			const domain = matches && matches[1]
+			const bodyHTML = await this.page.evaluate(() => document.body.innerHTML)
+			const todayDate = await moment()
+				.format('YYYY-MM-DDTHH-mm-ss-SSS')
+			let pathToSaveHTML = ''
 
-		if (isError) {
-			const folderPath = process.mainModule.paths[0].split('node_modules')[0].slice(0, -1)
+			if (isError) {
+				const folderPath = process.mainModule.paths[0].split('node_modules')[0].slice(0, -1)
 
-			pathToSaveHTML = `${folderPath}/../${defaults.fullHTMLDir}/${domain}_${todayDate}.txt`
-		} else {
-			pathToSaveHTML = `${path}/${todayDate}_error.png`
+				pathToSaveHTML = `${folderPath}/../${defaults.fullHTMLDir}/${domain}_${todayDate}.txt`
+			} else {
+				pathToSaveHTML = `${path}/${todayDate}_error.png`
+			}
+
+			fs.writeFileSync(pathToSaveHTML, bodyHTML)
+
+			this.logger.warn(`Full HTML saved: ${pathToSaveHTML}`)
+		} catch (err) {
+			this.logger.error(`Error on saveFullHtmlContent: ${err}`)
 		}
-
-		fs.writeFileSync(pathToSaveHTML, bodyHTML)
-
-		this.logger.warn(`Full HTML saved: ${pathToSaveHTML}`)
 	}
 
 }
