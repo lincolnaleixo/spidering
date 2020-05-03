@@ -12,6 +12,23 @@
 		"logs/screenshots",
 		"logs/fullHTML"
 	],
+	"errorsHandlers": [
+		{
+			"errorMessage": "net::ERR_INTERNET_DISCONNECTED",
+			"loggerMessage": "Seems that this computer is offline, sleeping and trying again",
+			"sleepingSeconds": 60
+		},
+		{
+			"errorMessage": "net::ERR_TUNNEL_CONNECTION_FAILED",
+			"loggerMessage": "Could not connect to the url, sleeping and trying again",
+			"sleepingSeconds": 30
+		},
+		{
+			"errorMessage": "net::ERR_NAME_NOT_RESOLVED",
+			"loggerMessage": "Could not resolve the url, sleeping and trying again",
+			"sleepingSeconds": 15
+		}
+	],
 	"screenshotsDir": "logs/screenshots",
 	"fullHTMLDir": "logs/fullHTML",
 	"chromeArgs": [

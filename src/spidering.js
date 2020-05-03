@@ -1,5 +1,5 @@
-/* eslint-disable require-jsdoc */
 // @ts-check
+/* eslint-disable require-jsdoc */
 /* eslint-disable node/no-unpublished-require */
 const puppeteer = require('puppeteer-extra')
 const pluginStealth = require('puppeteer-extra-plugin-stealth')
@@ -13,7 +13,7 @@ const moment = require('moment-timezone')
 const Cawer = require('cawer')
 const axios = require('axios')
 const cheerio = require('cheerio')
-const Logger = require('../lib/logger.js')
+const Logering = require('logering')
 const defaults = require('../resources/defaults.json')
 
 class Spidering {
@@ -27,7 +27,7 @@ class Spidering {
 		puppeteer.use(pluginStealth())
 		puppeteer.use(pluginUA())
 
-		const logger = new Logger('spidering')
+		const logger = new Logering('spidering')
 
 		this.browser = ''
 		this.page = ''
@@ -35,11 +35,8 @@ class Spidering {
 		this.cawer = new Cawer()
 	}
 
-	createDefaultFolders() {
-		for (const folder of defaults.necessaryFolders) {
-			if (!fs.existsSync(folder)) fs.mkdirSync(folder)
-		}
-	}
+	// Cookies
+	// ----------------------------------------------------------------------
 
 	async saveCookies(cookiesPath) {
 		const cookiesFilePath = cookiesPath || this.cookiesPath
@@ -65,6 +62,14 @@ class Spidering {
 		}
 
 		this.logger.info('Done reading and setting cookies')
+	}
+
+	// ----------------------------------------------------------------------
+
+	createDefaultFolders() {
+		for (const folder of defaults.necessaryFolders) {
+			if (!fs.existsSync(folder)) fs.mkdirSync(folder)
+		}
 	}
 
 	async createBrowser(proxy) {
@@ -108,9 +113,15 @@ class Spidering {
 	async setVeryCleanParameters() {
 		await this.page.setRequestInterception(true)
 
+		const blockedResourceTypes = [
+			'image',
+			'font',
+			'script',
+			'stylesheet',
+		]
+
 		this.page.on('request', (request) => {
-			if (request.resourceType() === 'image' || request.resourceType() === 'script'
-						|| request.resourceType() === 'stylesheet' || request.resourceType() === 'font') {
+			if (blockedResourceTypes.indexOf(request.resourceType()) > -1) {
 				request.abort()
 			} else {
 				request.continue()
@@ -138,23 +149,15 @@ class Spidering {
 	}
 
 	async handleNavigateToErrors(url, err) {
-		const sleepOfflineSeconds = 60
-		const sleepTunnelSeconds = 30
-		const defaultSleeping = 15
+		const errorHandler = defaults.errorsHandlers
+			.find((item) => err.message.indexOf(item.errorMessage) > -1)
 
-		if (err.message.indexOf('net::ERR_INTERNET_DISCONNECTED') > -1) {
-			this.logger.error(`Seems that this computer is offline, sleeping for ${sleepOfflineSeconds} and trying again`)
-			await this.cawer.sleep(sleepOfflineSeconds)
-		} else if (err.message.indexOf('net::ERR_TUNNEL_CONNECTION_FAILED') > -1) {
-			this.logger.error(`Could not connect to the url ${url}, sleeping for ${sleepTunnelSeconds} and trying again`)
-			await this.cawer.sleep(sleepTunnelSeconds)
-		} else if (err.message.indexOf('net::ERR_NAME_NOT_RESOLVED') > -1) {
-			this.logger.error(`Could not resolve the url ${url}, sleeping for ${defaultSleeping} and trying again`)
-			await this.cawer.sleep(defaultSleeping)
-		} else {
+		if (errorHandler === undefined) {
 			this.logger.error(`Error on navigateTo url ${url}: ${err}`)
-
-			return false
+		} else {
+			this.logger.error(errorHandler.errorMessage)
+			this.logger.warn(`Sleep seconds: ${errorHandler.sleepingSeconds} | url: ${url}`)
+			await this.cawer.sleep(errorHandler.sleepingSeconds)
 		}
 
 		await this.takeScreenshot(true)
@@ -172,16 +175,8 @@ class Spidering {
 				'load',
 				'domcontentloaded',
 			] })
-
-			if (postBack) {
-				const headers = response.headers()
-
-				if (headers.status === '200') return true
-
-				this.logger.error(`Error on getting the page contents. Response status: ${headers.status}`)
-
-				return false
-			}
+			const headers = response.headers()
+			if (headers.status !== '200') throw new Error(`Error on getting the page contents. Response status: ${headers.status}`)
 
 			const bytesReceived = await this.getTotalBytesReceived()
 			this.logger.debug(`Total bytes received: ${bytesReceived}`)
@@ -189,9 +184,9 @@ class Spidering {
 			return true
 		} catch (err) {
 			if (this.handleNavigateToErrors(url, err)) this.navigateTo(url, postBack)
-		}
 
-		return false
+			return false
+		}
 	}
 
 	async setRandomUserAgent() {
@@ -287,18 +282,38 @@ class Spidering {
 		return false
 	}
 
-	async scrapeElement(url, elementId) {
+	/**
+	* Scrape a page using puppeter or axios+cheerio
+	* @param {Object} options Options to scrape,
+	* @return {Object} element/script scraped/evaluated
+	params accepted: element, script, evaluate, waitForElement, url
+	*/
+	scrape(options) {
+		// element, script, waitForElement, url
+		if (options.script) {
+			return this.evaluate(options.script, options.waitForElement)
+		} if (options.element) {
+			return this.scrapeElement(options.url, options.element)
+		}
+
+		this.logger(`Insuficient parameters for scrape method. options: ${JSON.stringify(options)}`)
+
+		return {}
+	}
+
+	async scrapeElement(url, element) {
 		// TODO ter base de useragent (helper)
 		const response = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36' } })
 		const $ = cheerio.load(response.data)
-		const content = $(`#${elementId}`)
+		let content = ''
+		content = $(`${element}`)
 
 		return content
 	}
 
-	async evaluate(elementToEvaluate, waitForElement) {
+	async evaluate(scriptToEvaluate, waitForElement) {
 		try {
-			this.logger.info(`Evaluating: ${elementToEvaluate}`)
+			this.logger.info(`Evaluating: ${scriptToEvaluate}`)
 
 			if (waitForElement) {
 				this.logger.info(`but first waiting for element ${waitForElement}`)
@@ -312,7 +327,7 @@ class Spidering {
 			// const evaluateResult = await page.evaluate(() =>
 			// Array.from(document.querySelectorAll('.result__a')).map((item) => item.innerText));
 			const evaluateResult = await this.page.evaluate(`(async() => {
-				return ${elementToEvaluate}
+				return ${scriptToEvaluate}
 	  	})()`)
 
 			return evaluateResult
