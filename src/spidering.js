@@ -1,3 +1,4 @@
+/* eslint-disable prefer-destructuring */
 // @ts-check
 /* eslint-disable require-jsdoc */
 /* eslint-disable node/no-unpublished-require */
@@ -20,8 +21,8 @@ class Spidering {
 
 	constructor() {
 		if (process.env.NODE_ENV === undefined) process.env.NODE_ENV = defaults.environment
+		process.setMaxListeners(100)
 		this.isDevelopmentEnv = process.env === 'DEVELOPMENT'
-
 		this.createDefaultFolders()
 
 		puppeteer.use(pluginStealth())
@@ -95,7 +96,8 @@ class Spidering {
 	async createPage(pageType) {
 		this.logger.debug('Creating page')
 		this.page = await this.browser.newPage()
-		await this.setPageParameters(pageType)
+		if (pageType) await this.setPageParameters(pageType)
+		else await this.setPageParameters('full')
 	}
 
 	async setCleanParameters() {
@@ -165,7 +167,7 @@ class Spidering {
 		return true
 	}
 
-	async navigateTo(url, postBack) {
+	async navigateTo(url) {
 		try {
 			this.url = url
 			this.logger.info(`Navigating to url: ${url}`)
@@ -183,7 +185,7 @@ class Spidering {
 
 			return true
 		} catch (err) {
-			if (this.handleNavigateToErrors(url, err)) this.navigateTo(url, postBack)
+			if (this.handleNavigateToErrors(url, err)) this.navigateTo(url)
 
 			return false
 		}
@@ -288,15 +290,23 @@ class Spidering {
 	* @return {Object} element/script scraped/evaluated
 	params accepted: element, script, evaluate, waitForElement, url
 	*/
-	scrape(options) {
-		// element, script, waitForElement, url
-		if (options.script) {
-			return this.evaluate(options.script, options.waitForElement)
-		} if (options.element) {
-			return this.scrapeElement(options.url, options.element)
+	async scrape(options) {
+		try {
+			// element, script, waitForElement, url
+			if (options.script) {
+				return this.evaluate(options.script, options.waitForElement)
+			}
+			if (options.element) {
+				return this.scrapeElement(options.url, options.element)
+			}
+			this.logger(`Insuficient parameters for scrape method. options: ${JSON.stringify(options)}`)
+		} catch (err) {
+			this.logger.error(`Error on scrape method: ${err.message}`)
+			this.logger.warn('Reloading and trying again in 60 seconds')
+			if (options.script) await this.reload()
+			await this.cawer.sleep(60)
+			await this.scrape(options)
 		}
-
-		this.logger(`Insuficient parameters for scrape method. options: ${JSON.stringify(options)}`)
 
 		return {}
 	}
