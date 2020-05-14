@@ -22,7 +22,7 @@ class Spidering {
 	constructor() {
 		if (process.env.NODE_ENV === undefined) process.env.NODE_ENV = defaults.environment
 		process.setMaxListeners(100)
-		this.isDevelopmentEnv = process.env === 'DEVELOPMENT'
+		this.isDevelopmentEnv = (process.env.NODE_ENV === 'DEVELOPMENT')
 		this.createDefaultFolders()
 
 		puppeteer.use(pluginStealth())
@@ -37,8 +37,10 @@ class Spidering {
 	}
 
 	// Cookies
-	// ----------------------------------------------------------------------
 
+	/**
+	 * @param {boolean} cookiesPath
+	 */
 	async saveCookies(cookiesPath) {
 		const cookiesFilePath = cookiesPath || this.cookiesPath
 		const cookiesObject = await this.page.cookies()
@@ -46,6 +48,9 @@ class Spidering {
 		this.logger.info(`Cookies saved: ${cookiesPath}`)
 	}
 
+	/**
+	 * @param {any} cookiesPath
+	 */
 	async setCookies(cookiesPath) {
 		const cookiesFilePath = cookiesPath || this.cookiesPath
 
@@ -73,7 +78,10 @@ class Spidering {
 		}
 	}
 
-	async createBrowser(proxy) {
+	/**
+	 * * @param {string} proxy
+	*/
+	async createBrowser(proxy = '') {
 		this.logger.debug('Creating browser')
 
 		if (proxy) {
@@ -93,6 +101,9 @@ class Spidering {
 		})
 	}
 
+	/**
+	 * @param {string} pageType
+	 */
 	async createPage(pageType) {
 		this.logger.debug('Creating page')
 		this.page = await this.browser.newPage()
@@ -103,6 +114,9 @@ class Spidering {
 	async setCleanParameters() {
 		await this.page.setRequestInterception(true)
 
+		/**
+		 * @param {{ resourceType: () => string; abort: () => void; continue: () => void; }} request
+		 */
 		this.page.on('request', (request) => {
 			if (request.resourceType() === 'image' || request.resourceType() === 'font') {
 				request.abort()
@@ -122,6 +136,9 @@ class Spidering {
 			'stylesheet',
 		]
 
+		/**
+		 * @param {{ resourceType: () => string; abort: () => void; continue: () => void; }} request
+		 */
 		this.page.on('request', (request) => {
 			if (blockedResourceTypes.indexOf(request.resourceType()) > -1) {
 				request.abort()
@@ -131,8 +148,14 @@ class Spidering {
 		})
 	}
 
+	/**
+	 * @param {string} pageType
+	 */
 	async setPageParameters(pageType) {
 		this.logger.debug(`Using page type: ${pageType}`)
+		/**
+		 * @param {{ accept: () => any; }} dialog
+		 */
 		this.page.on('dialog', async (dialog) => {
 			await dialog.accept()
 		})
@@ -150,6 +173,10 @@ class Spidering {
 		await this.setRandomUserAgent()
 	}
 
+	/**
+	 * @param {any} url
+	 * @param {{ message: string | string[]; }} err
+	 */
 	async handleNavigateToErrors(url, err) {
 		const errorHandler = defaults.errorsHandlers
 			.find((item) => err.message.indexOf(item.errorMessage) > -1)
@@ -167,6 +194,9 @@ class Spidering {
 		return true
 	}
 
+	/**
+	 * @param {string} url
+	 */
 	async navigateTo(url) {
 		try {
 			this.url = url
@@ -203,6 +233,11 @@ class Spidering {
 		await this.page.setUserAgent(userAgent.data.userAgent)
 	}
 
+	/**
+	 * @param {any} elementToClick
+	 * @param {any} elementToWait
+	 * @param {any} timeToWait
+	 */
 	async click(elementToClick, elementToWait, timeToWait) {
 		try {
 			this.logger.debug(`Clicking on element: ${elementToClick}`)
@@ -226,6 +261,11 @@ class Spidering {
 		}
 	}
 
+	/**
+	 * @param {any} elementToHover
+	 * @param {any} elementToWait
+	 * @param {any} timeToWait
+	 */
 	async hover(elementToHover, elementToWait, timeToWait) {
 		try {
 			this.logger.debug(`Hovering on element: ${elementToHover}`)
@@ -244,6 +284,11 @@ class Spidering {
 		}
 	}
 
+	/**
+	 * @param {any} elementToType
+	 * @param {string} textToType
+	 * @param {number} maxRandomTimeMs
+	 */
 	async typeInput(elementToType, textToType, maxRandomTimeMs) {
 		try {
 			this.logger.info(`Typying text on ${elementToType}`)
@@ -271,8 +316,12 @@ class Spidering {
 	async getTotalBytesReceived() {
 		try {
 			const result = await this.page.evaluate(() => JSON.stringify(performance.getEntries()))
-			const bytesReceived = this.cawer.formatBytes((JSON.parse(result))
-				.reduce((total, item) => total + (item.transferSize !== undefined ? item.transferSize : 0), 0))
+			const bytesReceived = /**
+			 * @param {any} total
+			 * @param {{ transferSize: any; }} item
+			 */
+ this.cawer.formatBytes((JSON.parse(result))
+ 	.reduce((total, item) => total + (item.transferSize !== undefined ? item.transferSize : 0), 0))
 
 			return bytesReceived
 		} catch (err) {
@@ -287,7 +336,6 @@ class Spidering {
 	/**
 	* Scrape a page using puppeter or axios+cheerio
 	* @param {Object} options Options to scrape,
-	* @return {Object} element/script scraped/evaluated
 	params accepted: element, script, evaluate, waitForElement, url
 	*/
 	async scrape(options) {
@@ -299,18 +347,22 @@ class Spidering {
 			if (options.element) {
 				return this.scrapeElement(options.url, options.element)
 			}
-			this.logger(`Insuficient parameters for scrape method. options: ${JSON.stringify(options)}`)
+			this.logger.error(`Insuficient parameters for scrape method. options: ${JSON.stringify(options)}`)
 		} catch (err) {
 			this.logger.error(`Error on scrape method: ${err.message}`)
 			this.logger.warn('Reloading and trying again in 60 seconds')
 			if (options.script) await this.reload()
-			await this.cawer.sleep(60)
+			this.cawer.sleep(60)
 			await this.scrape(options)
 		}
 
 		return {}
 	}
 
+	/**
+	 * @param {any} url
+	 * @param {any} element
+	 */
 	async scrapeElement(url, element) {
 		// TODO ter base de useragent (helper)
 		const response = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36' } })
@@ -321,6 +373,10 @@ class Spidering {
 		return content
 	}
 
+	/**
+	 * @param {any} scriptToEvaluate
+	 * @param {any} waitForElement
+	 */
 	async evaluate(scriptToEvaluate, waitForElement) {
 		try {
 			this.logger.info(`Evaluating: ${scriptToEvaluate}`)
@@ -351,6 +407,9 @@ class Spidering {
 		return false
 	}
 
+	/**
+	 * @param {string} url
+	 */
 	downloadFile(url) {
 		download(url, defaults.downloadPath)
 			.then(() => {
@@ -365,6 +424,9 @@ class Spidering {
 		await this.browser.close()
 	}
 
+	/**
+	 * @param {number} scrollCount
+	 */
 	async scrollPage(scrollCount) {
 		while (true) {
 			try {
@@ -386,6 +448,7 @@ class Spidering {
 		}
 	}
 
+	/** */
 	async takeScreenshot(isError = false, path = undefined) {
 		try {
 			this.logger.warn('Taking screenshot...')
@@ -415,6 +478,7 @@ class Spidering {
 		}
 	}
 
+	/** */
 	async saveFullHtmlContent(isError = false, path = undefined) {
 		try {
 			this.logger.warn('Saving full html content...')
