@@ -8,7 +8,7 @@ name: Release+Changelog
 
 jobs:
   build:
-    name: Create Release + Changelog
+    name: Create Release+Changelog
     runs-on: ubuntu-latest
     steps:
       - name: Conventional Changelog Action
