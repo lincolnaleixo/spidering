@@ -114,7 +114,7 @@ class Spidering {
 		await this.page.setRequestInterception(true)
 
 		/**
-		 * @param {{ resourceType: () => string; abort: () => void; continue: () => void; }} request
+		 * @param {object} request
 		 */
 		this.page.on('request', (request) => {
 			if (request.resourceType() === 'image' || request.resourceType() === 'font') {
@@ -136,7 +136,7 @@ class Spidering {
 		]
 
 		/**
-		 * @param {{ resourceType: () => string; abort: () => void; continue: () => void; }} request
+		 * @param {object} request
 		 */
 		this.page.on('request', (request) => {
 			if (blockedResourceTypes.indexOf(request.resourceType()) > -1) {

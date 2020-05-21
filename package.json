@@ -10,10 +10,12 @@
   },
   "main": "src/spidering.js",
   "dependencies": {
+    "@sentry/node": "5.15.5",
     "axios": "^0.19.2",
     "cawer": "^1.0.6",
     "cheerio": "^1.0.0-rc.3",
     "download": "^8.0.0",
+    "generate-changelog": "^1.8.0",
     "jsonfile": "6.0.1",
     "logering": "^0.0.2",
     "lowdb": "1.0.0",
