@@ -109,9 +109,7 @@ typings/
 # End of https://www.gitignore.io/api/node
 .DS_Store
 temp/
-yarn.lock
 .eslintrc
-package-lock.json
 !/.gitignore
 !/.gitattributes
 .gitignore
