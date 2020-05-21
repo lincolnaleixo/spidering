@@ -3,9 +3,6 @@ name: Greet Everyone
 on:
   schedule:
     - cron:  '*/5 * * * *'
-  branches:
-    - master
-
 jobs:
   build:
     # Job name is Greeting
