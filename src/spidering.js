@@ -485,7 +485,9 @@ class Spidering {
 		}
 	}
 
-	/** */
+	/**
+	 * @param {boolean} isError
+	 */
 	async saveFullHtmlContent(isError = false, path = undefined) {
 		try {
 			this.logger.warn('Saving full html content...')
