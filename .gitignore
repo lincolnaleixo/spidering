@@ -21,7 +21,6 @@ cookies
 # Edit at https://www.gitignore.io/?templates=node
 
 .gitignore
-.package-lock.json
 ### Node ###
 # Logs
 logs
