@@ -4,7 +4,7 @@ on:
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
-name: Release+Changelog v1.2
+name: Release+Changelog v1.3
 
 jobs:
   build:
@@ -14,16 +14,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         
-      - name: Conventional Changelog Action
-        uses: lincolnaleixo/changelog@master
+      - name: Generate Changelog
+        uses: lincolnaleixo/generate-changelog-action@master
+        id: Changelog
+        env:
+          REPO: ${{ github.repository }}
+          FILE: 'CHANGELOG.md'
         with:
           github-token: ${{ secrets.github_token }}
           
       - name: Create Release
-        uses: actions/create-release@v1
+        id: create_release
+        uses: actions/create-release@latest
         env:
-         GITHUB_TOKEN: ${{ secrets.github_token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-         tag_name: ${{ steps.changelog.outputs.tag }}
-         release_name: ${{ steps.changelog.outputs.tag }}
-         body: ${{ steps.changelog.outputs.clean_changelog }}
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ${{ steps.Changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
