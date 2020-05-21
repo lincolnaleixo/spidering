@@ -115,3 +115,5 @@ temp/
 .gitignore
 scripts/publish.sh
 meta/version.txt
+*.pub
+gh-pages
