@@ -153,7 +153,7 @@ class Spidering {
 	async setPageParameters(pageType) {
 		this.logger.debug(`Using page type: ${pageType}`)
 		/**
-		 * @param {{ accept: () => any; }} dialog
+		 * @param {any} dialog
 		 */
 		this.page.on('dialog', async (dialog) => {
 			await dialog.accept()
@@ -174,7 +174,7 @@ class Spidering {
 
 	/**
 	 * @param {any} url
-	 * @param {{ message: string | string[]; }} err
+	 * @param {object} err
 	 */
 	async handleNavigateToErrors(url, err) {
 		const errorHandler = defaults.errorsHandlers
@@ -315,12 +315,8 @@ class Spidering {
 	async getTotalBytesReceived() {
 		try {
 			const result = await this.page.evaluate(() => JSON.stringify(performance.getEntries()))
-			const bytesReceived = /**
-			 * @param {any} total
-			 * @param {{ transferSize: any; }} item
-			 */
- this.cawer.formatBytes((JSON.parse(result))
- 	.reduce((total, item) => total + (item.transferSize !== undefined ? item.transferSize : 0), 0))
+			const bytesReceived = this.cawer.formatBytes((JSON.parse(result))
+				.reduce((total, item) => total + (item.transferSize !== undefined ? item.transferSize : 0), 0))
 
 			return bytesReceived
 		} catch (err) {
@@ -400,7 +396,7 @@ class Spidering {
 				return ${scriptToEvaluate}
 			  })()`)
 
-			  return evaluateResult
+				return evaluateResult
 			}
 
 			await this.page.evaluate(`(async() => {
