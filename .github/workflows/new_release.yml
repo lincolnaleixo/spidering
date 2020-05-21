@@ -20,8 +20,6 @@ jobs:
         env:
           REPO: ${{ github.repository }}
           FILE: 'CHANGELOG.md'
-        with:
-          github-token: ${{ secrets.github_token }}
           
       - name: Create Release
         id: create_release
