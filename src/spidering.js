@@ -104,11 +104,10 @@ class Spidering {
 	/**
 	 * @param {string} pageType
 	 */
-	async createPage(pageType) {
+	async createPage(pageType = 'full') {
 		this.logger.debug('Creating page')
 		this.page = await this.browser.newPage()
-		if (pageType) await this.setPageParameters(pageType)
-		else await this.setPageParameters('full')
+		await this.setPageParameters(pageType)
 	}
 
 	async setCleanParameters() {
@@ -344,6 +343,9 @@ class Spidering {
 			if (options.script) {
 				return this.evaluate(options.script, options.waitForElement)
 			}
+			if (options.scriptWithoutReturn) {
+				return this.evaluate(options.scriptWithoutReturn, options.waitForElement, false)
+			}
 			if (options.element) {
 				return this.scrapeElement(options.url, options.element)
 			}
@@ -377,7 +379,7 @@ class Spidering {
 	 * @param {any} scriptToEvaluate
 	 * @param {any} waitForElement
 	 */
-	async evaluate(scriptToEvaluate, waitForElement) {
+	async evaluate(scriptToEvaluate, waitForElement, isReturnable = true) {
 		try {
 			this.logger.info(`Evaluating: ${scriptToEvaluate}`)
 
@@ -392,11 +394,20 @@ class Spidering {
 			// * normal evaluate
 			// const evaluateResult = await page.evaluate(() =>
 			// Array.from(document.querySelectorAll('.result__a')).map((item) => item.innerText));
-			const evaluateResult = await this.page.evaluate(`(async() => {
-				return ${scriptToEvaluate}
-	  	})()`)
 
-			return evaluateResult
+			if (isReturnable) {
+				const evaluateResult = await this.page.evaluate(`(async() => {
+				return ${scriptToEvaluate}
+			  })()`)
+
+			  return evaluateResult
+			}
+
+			await this.page.evaluate(`(async() => {
+					${scriptToEvaluate}
+				  })()`)
+
+			return true
 		} catch (err) {
 			this.logger.error(`Error on evaluate: ${err}`)
 
