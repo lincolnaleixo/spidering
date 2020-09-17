@@ -437,9 +437,8 @@ class Spidering {
 			try {
 				for (let i = 0; i < scrollCount; i += 1) {
 					console.log(`[${i + 1}/${scrollCount}] scrolling...`)
-					await this.page.evaluate(() => {
-						const scrollH = scrollHeight || window.innerHeight
-						window.scrollBy(0, scrollH)
+					await this.page.evaluate((scrollHeight) => {
+						window.scrollBy(0, scrollHeight || window.innerHeight)
 						// window.scrollTo(0, document.body.scrollHeight)
 					})
 
