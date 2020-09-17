@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 /* eslint-disable prefer-destructuring */
 // @ts-check
 /* eslint-disable require-jsdoc */
@@ -30,8 +31,8 @@ class Spidering {
 
 		const logger = new Logering('spidering')
 
-		this.browser = ''
-		this.page = ''
+		// this.browser = ''
+		// this.page = ''
 		this.logger = logger.get()
 		this.cawer = new Cawer()
 	}
@@ -39,12 +40,13 @@ class Spidering {
 	// Cookies
 
 	/**
-	 * @param {boolean} cookiesPath
+	 * @param {string} cookiesPath
 	 */
 	async saveCookies(cookiesPath) {
-		const cookiesFilePath = cookiesPath || this.cookiesPath
+		// const cookiesFilePath = cookiesPath || this.cookiesPath
+		// const cookiesFilePath = cookiesPath || this.cookiesPath
 		const cookiesObject = await this.page.cookies()
-		jsonfile.writeFileSync(cookiesFilePath, cookiesObject, { spaces: 2 })
+		jsonfile.writeFileSync(cookiesPath, cookiesObject, { spaces: 2 })
 		this.logger.info(`Cookies saved: ${cookiesPath}`)
 	}
 
@@ -52,12 +54,12 @@ class Spidering {
 	 * @param {any} cookiesPath
 	 */
 	async setCookies(cookiesPath) {
-		const cookiesFilePath = cookiesPath || this.cookiesPath
+		// const cookiesFilePath = cookiesPath || this.cookiesPath
 
 		this.logger.info('Reading and setting cookies')
 
-		if (fs.existsSync(cookiesFilePath)) {
-			const content = fs.readFileSync(cookiesFilePath)
+		if (fs.existsSync(cookiesPath)) {
+			const content = fs.readFileSync(cookiesPath)
 			const cookiesArr = JSON.parse(content)
 
 			if (cookiesArr.length !== 0) {
@@ -81,7 +83,7 @@ class Spidering {
 	/**
 	 * * @param {string} proxy
 	*/
-	async createBrowser(proxy = '') {
+	async createBrowser(proxy = undefined, slowMoMs = undefined) {
 		this.logger.debug('Creating browser')
 
 		if (proxy) {
@@ -94,7 +96,7 @@ class Spidering {
 			devtools: this.isDevelopmentEnv,
 			dumpio: this.isDevelopmentEnv,
 			ignoreHTTPSErrors: !this.isDevelopmentEnv,
-			slowMo: 250,
+			slowMo: slowMoMs || 250,
 			timeout: this.isDevelopmentEnv ? 10000 : 60000,
 			defaultViewport: null,
 			args: defaults.chromeArgs,
@@ -363,8 +365,7 @@ class Spidering {
 		// TODO ter base de useragent (helper)
 		const response = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36' } })
 		const $ = cheerio.load(response.data)
-		let content = ''
-		content = $(`${element}`)
+		const content = $(`${element}`)
 
 		return content
 	}
@@ -422,21 +423,28 @@ class Spidering {
 			})
 	}
 
-	async closeBrowser(cookiesFilePath = false) {
+	/**
+	 * @param {string} cookiesFilePath
+	 */
+	async closeBrowser(cookiesFilePath = undefined) {
 		if (cookiesFilePath) await this.saveCookies(cookiesFilePath)
 
 		await this.page.close()
 		await this.browser.close()
 	}
 
+	// eslint-disable-next-line no-unused-vars
 	/**
 	 * @param {number} scrollCount
+	 * @param {number} scrollHeight
 	 */
+	// eslint-disable-next-line no-unused-vars
 	async scrollPage(scrollCount, scrollHeight = undefined) {
 		while (true) {
 			try {
 				for (let i = 0; i < scrollCount; i += 1) {
 					console.log(`[${i + 1}/${scrollCount}] scrolling...`)
+					// eslint-disable-next-line no-shadow
 					await this.page.evaluate((scrollHeight) => {
 						window.scrollBy(0, scrollHeight || window.innerHeight)
 						// window.scrollTo(0, document.body.scrollHeight)
