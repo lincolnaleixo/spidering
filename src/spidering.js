@@ -432,7 +432,7 @@ class Spidering {
 	/**
 	 * @param {number} scrollCount
 	 */
-	async scrollPage(scrollCount, scrollHeight) {
+	async scrollPage(scrollCount, scrollHeight = undefined) {
 		while (true) {
 			try {
 				for (let i = 0; i < scrollCount; i += 1) {
