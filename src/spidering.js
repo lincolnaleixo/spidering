@@ -288,15 +288,13 @@ class Spidering {
 	 * @param {string} textToType
 	 * @param {number} maxRandomTimeMs
 	 */
-	async typeInput(elementToType, textToType, maxRandomTimeMs) {
+	async typeInput(elementToType, textToType, maxRandomTimeMs = 5000, minRandomTimeMS = 500) {
 		try {
 			this.logger.info(`Typying text on ${elementToType}`)
 			await this.page.focus(elementToType)
-			const min = 500
-			const max = maxRandomTimeMs || 5000
 			for (let i = 0; i < textToType.length; i += 1) {
 				const random = new Random()
-				const randomSleepMs = random.real(min, max)
+				const randomSleepMs = random.real(minRandomTimeMS, maxRandomTimeMs)
 				const char = textToType.charAt(i)
 				await this.page.type(elementToType, char)
 				await this.logger.debug(`Typying char ${char}`)
@@ -434,14 +432,14 @@ class Spidering {
 	/**
 	 * @param {number} scrollCount
 	 */
-	async scrollPage(scrollCount) {
+	async scrollPage(scrollCount, scrollHeight) {
 		while (true) {
 			try {
 				for (let i = 0; i < scrollCount; i += 1) {
 					console.log(`[${i + 1}/${scrollCount}] scrolling...`)
 					await this.page.evaluate(() => {
-						window.scrollBy(0, window.innerHeight)
-						window.scrollTo(0, document.body.scrollHeight)
+						window.scrollBy(0, scrollHeight || window.innerHeight)
+						// window.scrollTo(0, document.body.scrollHeight)
 					})
 
 					this.cawer.sleep(3)
