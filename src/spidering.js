@@ -45,6 +45,7 @@ class Spidering {
 	async saveCookies(cookiesPath) {
 		// const cookiesFilePath = cookiesPath || this.cookiesPath
 		// const cookiesFilePath = cookiesPath || this.cookiesPath
+		this.cookiesPath = cookiesPath
 		const cookiesObject = await this.page.cookies()
 		jsonfile.writeFileSync(cookiesPath, cookiesObject, { spaces: 2 })
 		this.logger.info(`Cookies saved: ${cookiesPath}`)
@@ -54,6 +55,7 @@ class Spidering {
 	 * @param {any} cookiesPath
 	 */
 	async setCookies(cookiesPath) {
+		this.cookiesPath = cookiesPath
 		// const cookiesFilePath = cookiesPath || this.cookiesPath
 
 		this.logger.info('Reading and setting cookies')
@@ -209,7 +211,7 @@ class Spidering {
 				'domcontentloaded',
 			] })
 			const headers = response.headers()
-			if (headers.status !== '200') throw new Error(`Error on getting the page contents. Response status: ${headers.status}`)
+			if (headers.status && headers.status !== '200') throw new Error(`Error on getting the page contents. Response status: ${headers.status}`)
 
 			const bytesReceived = await this.getTotalBytesReceived()
 			this.logger.debug(`Total bytes received: ${bytesReceived}`)
@@ -428,6 +430,7 @@ class Spidering {
 	 */
 	async closeBrowser(cookiesFilePath = undefined) {
 		if (cookiesFilePath) await this.saveCookies(cookiesFilePath)
+		else if (this.cookiesPath) await this.saveCookies(this.cookiesPath)
 
 		await this.page.close()
 		await this.browser.close()
