@@ -10,9 +10,8 @@
   },
   "main": "src/spidering.js",
   "dependencies": {
-    "@sentry/node": "5.15.5",
     "axios": "^0.19.2",
-    "cawer": "^1.0.6",
+    "cawer": "^1.0.7",
     "cheerio": "^1.0.0-rc.3",
     "download": "^8.0.0",
     "generate-changelog": "^1.8.0",

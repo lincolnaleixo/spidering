@@ -117,3 +117,6 @@ scripts/publish.sh
 meta/version.txt
 *.pub
 gh-pages
+tests/testsOptions.json
+screenshot.png
+a.bash

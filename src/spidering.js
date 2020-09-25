@@ -85,25 +85,57 @@ class Spidering {
 	/**
 	 * * @param {string} proxy
 	*/
-	async createBrowser(proxy = undefined, slowMoMs = undefined) {
-		this.logger.debug('Creating browser')
-
-		if (proxy) {
-			defaults.chromeArgs.push(`--proxy-server=${proxy}`)
-			this.logger.info(`Using proxy ${proxy}`)
-		}
-
-		this.browser = await puppeteer.launch({
+	async createBrowser(options) {
+		const flags = {
 			headless: !this.isDevelopmentEnv,
 			devtools: this.isDevelopmentEnv,
 			dumpio: this.isDevelopmentEnv,
 			ignoreHTTPSErrors: !this.isDevelopmentEnv,
-			slowMo: slowMoMs || 250,
+			slowMo: options.slowMoMs || 250,
 			timeout: this.isDevelopmentEnv ? 10000 : 60000,
 			defaultViewport: null,
 			args: defaults.chromeArgs,
-		})
+		}
+
+		if (options.proxy) {
+			defaults.chromeArgs.push(`--proxy-server=${options.proxy}`)
+			this.logger.info(`Using proxy ${options.proxy}`)
+		}
+
+		if (options.endpointServer) {
+			let endpointWithFlags = `${options.endpointServer}&${defaults.chromeArgs}`
+			if (options.blockAds) endpointWithFlags += '&blockAds'
+
+			this.browser = await puppeteer.connect({
+				browserWSEndpoint: `ws://10.0.0.48:4000?${defaults.chromeArgs}`,
+				ignoreHTTPSErrors: true,
+				slowMo: flags.slowMo,
+			})
+
+			this.logger.debug(`Connected to endpoint ${options.endpointServer}`)
+			this.logger.debug(`Endpoint with flags: ${endpointWithFlags}`)
+		} else {
+			this.browser = await puppeteer.launch(flags)
+
+			this.logger.debug('Browser created')
+		}
 	}
+
+	// /**
+	//  * * @param {string} proxy
+	// */
+	// async connectToEndpoint(enpointServer, proxy = undefined, slowMoMs = undefined) {
+	// 	this.logger.debug(`Connecting to endpoint ${enpointServer}`)
+
+	// 	if (proxy) {
+	// 		defaults.chromeArgs.push(`--proxy-server=${proxy}`)
+	// 		this.logger.info(`Using proxy ${proxy}`)
+	// 	}
+
+	// 	this.browser = await puppeteer.connect({ browserWSEndpoint: `ws://${enpointServer}` })
+
+	// 	this.logger.debug(`Connected`)
+	// }
 
 	/**
 	 * @param {string} pageType
@@ -473,14 +505,12 @@ class Spidering {
 			const domain = matches && matches[1]
 			const todayDate = await moment()
 				.format('YYYY-MM-DDTHH-mm-ss-SSS')
-			let pathToSaveScreenshot = ''
+			let pathToSaveScreenshot = path
 
 			if (isError) {
 				const folderPath = process.mainModule.paths[0].split('node_modules')[0].slice(0, -1)
 
 				pathToSaveScreenshot = `${folderPath}/../${defaults.screenshotsDir}/${domain}_${todayDate}_error.png`
-			} else {
-				pathToSaveScreenshot = `${path}/${todayDate}_error.png`
 			}
 
 			await this.page.screenshot({
