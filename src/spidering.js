@@ -1,39 +1,31 @@
-/* eslint-disable no-useless-escape */
-/* eslint-disable prefer-destructuring */
-// @ts-check
 /* eslint-disable require-jsdoc */
-/* eslint-disable node/no-unpublished-require */
 const puppeteer = require('puppeteer-extra')
 const pluginStealth = require('puppeteer-extra-plugin-stealth')
 const pluginUA = require('puppeteer-extra-plugin-anonymize-ua')
 const jsonfile = require('jsonfile')
 const fs = require('fs')
 const download = require('download')
-const UserAgent = require('user-agents')
 const { Random } = require('random-js')
 const moment = require('moment-timezone')
 const Cawer = require('cawer')
 const axios = require('axios')
 const cheerio = require('cheerio')
-const Logering = require('logering')
+const UserAgent = require('user-agents')
 const defaults = require('../resources/defaults.json')
 
 class Spidering {
 
 	constructor() {
 		if (process.env.NODE_ENV === undefined) process.env.NODE_ENV = defaults.environment
-		process.setMaxListeners(100)
 		this.isDevelopmentEnv = (process.env.NODE_ENV === 'DEVELOPMENT')
+		process.setMaxListeners(100)
 		this.createDefaultFolders()
 
+		// @ts-ignore
 		puppeteer.use(pluginStealth())
+		// @ts-ignore
 		puppeteer.use(pluginUA())
 
-		const logger = new Logering('spidering')
-
-		// this.browser = ''
-		// this.page = ''
-		this.logger = logger.get()
 		this.cawer = new Cawer()
 	}
 
@@ -48,7 +40,7 @@ class Spidering {
 		this.cookiesPath = cookiesPath
 		const cookiesObject = await this.page.cookies()
 		jsonfile.writeFileSync(cookiesPath, cookiesObject, { spaces: 2 })
-		this.logger.info(`Cookies saved: ${cookiesPath}`)
+		// this.log(`Cookies saved: ${cookiesPath}`, 'info')
 	}
 
 	/**
@@ -58,20 +50,21 @@ class Spidering {
 		this.cookiesPath = cookiesPath
 		// const cookiesFilePath = cookiesPath || this.cookiesPath
 
-		this.logger.info('Reading and setting cookies')
+		// this.log('Reading and setting cookies', 'info')
 
 		if (fs.existsSync(cookiesPath)) {
 			const content = fs.readFileSync(cookiesPath)
+			// @ts-ignore
 			const cookiesArr = JSON.parse(content)
 
 			if (cookiesArr.length !== 0) {
 				for (const cookie of cookiesArr) await this.page.setCookie(cookie)
 
-				this.logger.info('Session has been loaded in the browser')
+				// this.log('Session has been loaded in the browser', 'info')
 			}
 		}
 
-		this.logger.info('Done reading and setting cookies')
+		// this.log('Done reading and setting cookies', 'info')
 	}
 
 	// ----------------------------------------------------------------------
@@ -99,25 +92,27 @@ class Spidering {
 
 		if (options.proxy) {
 			defaults.chromeArgs.push(`--proxy-server=${options.proxy}`)
-			this.logger.info(`Using proxy ${options.proxy}`)
+			// this.logger.info(`Using proxy ${options.proxy}`)
 		}
 
 		if (options.endpointServer) {
-			let endpointWithFlags = `${options.endpointServer}&${defaults.chromeArgs}`
+			let endpointWithFlags = `${options.endpointServer}?${defaults.chromeArgs}`
 			if (options.blockAds) endpointWithFlags += '&blockAds'
 
+			// @ts-ignore
 			this.browser = await puppeteer.connect({
-				browserWSEndpoint: `ws://10.0.0.48:4000?${defaults.chromeArgs}`,
+				browserWSEndpoint: `ws://${endpointWithFlags}`,
 				ignoreHTTPSErrors: true,
 				slowMo: flags.slowMo,
 			})
 
-			this.logger.debug(`Connected to endpoint ${options.endpointServer}`)
-			this.logger.debug(`Endpoint with flags: ${endpointWithFlags}`)
+			// this.logger.debug(`Connected to endpoint ${options.endpointServer}`)
+			// this.logger.debug(`Endpoint with flags: ${endpointWithFlags}`)
 		} else {
+			// @ts-ignore
 			this.browser = await puppeteer.launch(flags)
 
-			this.logger.debug('Browser created')
+			// this.logger.debug('Browser created')
 		}
 	}
 
@@ -125,23 +120,23 @@ class Spidering {
 	//  * * @param {string} proxy
 	// */
 	// async connectToEndpoint(enpointServer, proxy = undefined, slowMoMs = undefined) {
-	// 	this.logger.debug(`Connecting to endpoint ${enpointServer}`)
+	// this.logger.debug(`Connecting to endpoint ${enpointServer}`)
 
 	// 	if (proxy) {
 	// 		defaults.chromeArgs.push(`--proxy-server=${proxy}`)
-	// 		this.logger.info(`Using proxy ${proxy}`)
+	// this.logger.info(`Using proxy ${proxy}`)
 	// 	}
 
 	// 	this.browser = await puppeteer.connect({ browserWSEndpoint: `ws://${enpointServer}` })
 
-	// 	this.logger.debug(`Connected`)
+	// this.logger.debug(`Connected`)
 	// }
 
 	/**
 	 * @param {string} pageType
 	 */
 	async createPage(pageType = 'full') {
-		this.logger.debug('Creating page')
+		// this.logger.debug('Creating page')
 		this.page = await this.browser.newPage()
 		await this.setPageParameters(pageType)
 	}
@@ -187,7 +182,7 @@ class Spidering {
 	 * @param {string} pageType
 	 */
 	async setPageParameters(pageType) {
-		this.logger.debug(`Using page type: ${pageType}`)
+		// this.logger.debug(`Using page type: ${pageType}`)
 		/**
 		 * @param {any} dialog
 		 */
@@ -217,10 +212,10 @@ class Spidering {
 			.find((item) => err.message.indexOf(item.errorMessage) > -1)
 
 		if (errorHandler === undefined) {
-			this.logger.error(`Error on navigateTo url ${url}: ${err}`)
+			// this.logger.error(`Error on navigateTo url ${url}: ${err}`)
 		} else {
-			this.logger.error(errorHandler.errorMessage)
-			this.logger.warn(`Sleep seconds: ${errorHandler.sleepingSeconds} | url: ${url}`)
+			// this.logger.error(errorHandler.errorMessage)
+			// this.logger.warn(`Sleep seconds: ${errorHandler.sleepingSeconds} | url: ${url}`)
 			await this.cawer.sleep(errorHandler.sleepingSeconds)
 		}
 
@@ -235,7 +230,7 @@ class Spidering {
 	async navigateTo(url) {
 		try {
 			this.url = url
-			this.logger.info(`Navigating to url: ${url}`)
+			// this.logger.info(`Navigating to url: ${url}`)
 
 			const response = await this.page.goto(url, { waitUntil: [
 				'networkidle0',
@@ -246,9 +241,9 @@ class Spidering {
 			if (headers.status && headers.status !== '200') throw new Error(`Error on getting the page contents. Response status: ${headers.status}`)
 
 			const bytesReceived = await this.getTotalBytesReceived()
-			this.logger.debug(`Total bytes received: ${bytesReceived}`)
+			// this.logger.debug(`Total bytes received: ${bytesReceived}`)
 
-			return true
+			return bytesReceived
 		} catch (err) {
 			if (this.handleNavigateToErrors(url, err)) this.navigateTo(url)
 
@@ -275,13 +270,13 @@ class Spidering {
 	 */
 	async click(elementToClick, elementToWait, timeToWait) {
 		try {
-			this.logger.debug(`Clicking on element: ${elementToClick}`)
+			// this.logger.debug(`Clicking on element: ${elementToClick}`)
 
 			await this.page.click(elementToClick)
 
 			if (!elementToWait) return
 
-			this.logger.debug(`And then waiting for element: ${elementToWait}`)
+			// this.logger.debug(`And then waiting for element: ${elementToWait}`)
 
 			if (!timeToWait) {
 				await this.page.waitForSelector(elementToWait, { timeout: 120000 })
@@ -291,7 +286,7 @@ class Spidering {
 
 			await this.page.waitForSelector(elementToWait, { timeout: timeToWait })
 		} catch (err) {
-			this.logger.error(`Error on click: ${err}`)
+			// this.logger.error(`Error on click: ${err}`)
 			await this.takeScreenshot(true)
 		}
 	}
@@ -303,18 +298,18 @@ class Spidering {
 	 */
 	async hover(elementToHover, elementToWait, timeToWait) {
 		try {
-			this.logger.debug(`Hovering on element: ${elementToHover}`)
+			// this.logger.debug(`Hovering on element: ${elementToHover}`)
 
 			await this.page.hover(elementToHover)
 
 			if (!elementToWait) return
 
-			this.logger.debug(`And then waiting for element: ${elementToWait}`)
+			// this.logger.debug(`And then waiting for element: ${elementToWait}`)
 
 			if (!timeToWait) await this.page.waitForSelector(elementToWait, { timeout: 120000 })
 			else await this.page.waitForSelector(elementToWait, { timeout: timeToWait })
 		} catch (err) {
-			this.logger.error(`Error on hover: ${err}`)
+			// this.logger.error(`Error on hover: ${err}`)
 			await this.takeScreenshot(true)
 		}
 	}
@@ -326,18 +321,18 @@ class Spidering {
 	 */
 	async typeInput(elementToType, textToType, maxRandomTimeMs = 5000, minRandomTimeMS = 500) {
 		try {
-			this.logger.info(`Typying text on ${elementToType}`)
+			// this.logger.info(`Typying text on ${elementToType}`)
 			await this.page.focus(elementToType)
 			for (let i = 0; i < textToType.length; i += 1) {
 				const random = new Random()
 				const randomSleepMs = random.real(minRandomTimeMS, maxRandomTimeMs)
 				const char = textToType.charAt(i)
 				await this.page.type(elementToType, char)
-				await this.logger.debug(`Typying char ${char}`)
+				// await this.logger.debug(`Typying char ${char}`)
 				await this.cawer.msleep(randomSleepMs)
 			}
 		} catch (err) {
-			this.logger.error(`Error on typeInput: ${err}`)
+			// this.logger.error(`Error on typeInput: ${err}`)
 			await this.takeScreenshot(true)
 		}
 	}
@@ -354,7 +349,7 @@ class Spidering {
 
 			return bytesReceived
 		} catch (err) {
-			this.logger.error(`Error on getPerformanceEntries: ${err}`)
+			// this.logger.error(`Error on getPerformanceEntries: ${err}`)
 
 			await this.takeScreenshot(true)
 		}
@@ -379,10 +374,10 @@ class Spidering {
 			if (options.element) {
 				return this.scrapeElement(options.url, options.element)
 			}
-			this.logger.error(`Insuficient parameters for scrape method. options: ${JSON.stringify(options)}`)
+			// this.logger.error(`Insuficient parameters for scrape method. options: ${JSON.stringify(options)}`)
 		} catch (err) {
-			this.logger.error(`Error on scrape method: ${err.message}`)
-			this.logger.warn('Reloading and trying again in 60 seconds')
+			// this.logger.error(`Error on scrape method: ${err.message}`)
+			// this.logger.warn('Reloading and trying again in 60 seconds')
 			if (options.script) await this.reload()
 			this.cawer.sleep(60)
 			await this.scrape(options)
@@ -397,6 +392,7 @@ class Spidering {
 	 */
 	async scrapeElement(url, element) {
 		// TODO ter base de useragent (helper)
+		// @ts-ignore
 		const response = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36' } })
 		const $ = cheerio.load(response.data)
 		const content = $(`${element}`)
@@ -410,10 +406,10 @@ class Spidering {
 	 */
 	async evaluate(scriptToEvaluate, waitForElement, isReturnable = true) {
 		try {
-			this.logger.info(`Evaluating: ${scriptToEvaluate}`)
+			// this.logger.info(`Evaluating: ${scriptToEvaluate}`)
 
 			if (waitForElement) {
-				this.logger.info(`but first waiting for element ${waitForElement}`)
+				// this.logger.info(`but first waiting for element ${waitForElement}`)
 				await this.page.waitForSelector(waitForElement, { timeout: 120000 })
 			}
 
@@ -438,7 +434,7 @@ class Spidering {
 
 			return true
 		} catch (err) {
-			this.logger.error(`Error on evaluate: ${err}`)
+			// this.logger.error(`Error on evaluate: ${err}`)
 
 			await this.takeScreenshot(true)
 			await this.saveFullHtmlContent(true)
@@ -453,7 +449,7 @@ class Spidering {
 	downloadFile(url) {
 		download(url, defaults.downloadPath)
 			.then(() => {
-				this.logger.notice('done downloading!')
+				// this.logger.notice('done downloading!')
 			})
 	}
 
@@ -473,6 +469,7 @@ class Spidering {
 	 * @param {number} scrollCount
 	 * @param {number} scrollHeight
 	 */
+	// @ts-ignore
 	// eslint-disable-next-line no-unused-vars
 	async scrollPage(scrollCount, scrollHeight = undefined) {
 		while (true) {
@@ -488,7 +485,7 @@ class Spidering {
 					this.cawer.sleep(3)
 				}
 			} catch (error) {
-				this.logger.error(`Error on scrolling: ${error}\ntrying again in 30 seconds`)
+				// this.logger.error(`Error on scrolling: ${error}\ntrying again in 30 seconds`)
 				this.cawer.sleep(30)
 			}
 
@@ -496,10 +493,9 @@ class Spidering {
 		}
 	}
 
-	/** */
 	async takeScreenshot(isError = false, path = undefined) {
 		try {
-			this.logger.warn('Taking screenshot...')
+			// this.logger.warn('Taking screenshot...')
 
 			const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
 			const domain = matches && matches[1]
@@ -518,9 +514,9 @@ class Spidering {
 				fullPage: true,
 			})
 
-			this.logger.warn(`Screenshot saved: ${pathToSaveScreenshot}`)
+			// this.logger.warn(`Screenshot saved: ${pathToSaveScreenshot}`)
 		} catch (err) {
-			this.logger.error(`Error on takeScreenshot: ${err}`)
+			// this.logger.error(`Error on takeScreenshot: ${err}`)
 		}
 	}
 
@@ -529,7 +525,7 @@ class Spidering {
 	 */
 	async saveFullHtmlContent(isError = false, path = undefined) {
 		try {
-			this.logger.warn('Saving full html content...')
+			// this.logger.warn('Saving full html content...')
 
 			const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
 			const domain = matches && matches[1]
@@ -548,9 +544,9 @@ class Spidering {
 
 			fs.writeFileSync(pathToSaveHTML, bodyHTML)
 
-			this.logger.warn(`Full HTML saved: ${pathToSaveHTML}`)
+			// this.logger.warn(`Full HTML saved: ${pathToSaveHTML}`)
 		} catch (err) {
-			this.logger.error(`Error on saveFullHtmlContent: ${err}`)
+			// this.logger.error(`Error on saveFullHtmlContent: ${err}`)
 		}
 	}
 
