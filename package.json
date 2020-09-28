@@ -16,7 +16,7 @@
     "download": "^8.0.0",
     "jsonfile": "6.0.1",
     "moment-timezone": "^0.5.31",
-    "puppeteer": "^2.1.1",
+    "puppeteer": "^4.0.1",
     "puppeteer-extra": "3.1.15",
     "puppeteer-extra-plugin-anonymize-ua": "2.2.14",
     "puppeteer-extra-plugin-stealth": "2.6.1",
