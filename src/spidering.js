@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 /* eslint-disable require-jsdoc */
 const puppeteer = require('puppeteer-extra')
 const pluginStealth = require('puppeteer-extra-plugin-stealth')
@@ -79,23 +80,24 @@ class Spidering {
 	 * * @param {string} proxy
 	*/
 	async createBrowser(options) {
+		// const slowMoMs = 'slowMoMs' in options
 		const flags = {
 			headless: !this.isDevelopmentEnv,
 			devtools: this.isDevelopmentEnv,
 			dumpio: this.isDevelopmentEnv,
 			ignoreHTTPSErrors: !this.isDevelopmentEnv,
-			slowMo: options.slowMoMs || 250,
+			slowMo: options && options.slowMo ? options.slowMoMs : 250,
 			timeout: this.isDevelopmentEnv ? 10000 : 60000,
 			defaultViewport: null,
 			args: defaults.chromeArgs,
 		}
 
-		if (options.proxy) {
+		if (options && options.proxy) {
 			defaults.chromeArgs.push(`--proxy-server=${options.proxy}`)
 			// this.logger.info(`Using proxy ${options.proxy}`)
 		}
 
-		if (options.endpointServer) {
+		if (options && options.endpointServer) {
 			let endpointWithFlags = `${options.endpointServer}?${defaults.chromeArgs}`
 			if (options.blockAds) endpointWithFlags += '&blockAds'
 
@@ -222,6 +224,12 @@ class Spidering {
 		await this.takeScreenshot(true)
 
 		return true
+	}
+
+	async checkIfElementExists(selector) {
+		if (await this.page.$(selector) !== null) return true
+
+		return false
 	}
 
 	/**
