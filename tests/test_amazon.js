@@ -7,15 +7,13 @@ const rootPath = path.join(__dirname)
 const testOptions = jsonfile.readFileSync(path.join(rootPath, 'testsOptions.json'));
 
 (async () => {
-	const url = 'http://www.amazon.com'
-	// const endpointServer = '10.0.0.48:4000'
+	const url = 'https://www.whatismybrowser.com/detect/what-is-my-user-agent'
+	// const proxy = 'socks5://167.172.101.11:3129'
 	const cawer = new Cawer()
 	const spider = new Spider()
-	await spider.createBrowser({
-		endpointServer: testOptions.endpointServer, blockAds: false,
-	})
+	await spider.createBrowser({ blockAds: false })
 	// await spider.createBrowser()
-	await spider.createPage('clean')
+	await spider.createPage('clean', 60000)
 	console.log(await spider.navigateTo(url))
 	await cawer.sleep(3)
 	await spider.takeScreenshot(false, 'screenshot.png')

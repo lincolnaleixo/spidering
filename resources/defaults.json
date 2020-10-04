@@ -1,17 +1,17 @@
 {
-	"environment": "DEVELOPMENT",
-	"downloadPath": "./downloads",
+	"downloadsFolder": "downloads",
 	"pageTypeOptions": [
 		"full",
 		"clean",
 		"veryClean"
 	],
-	"cookiesPath": "./cookies/browserCookies",
-	"necessaryFolders": [
-		"logs",
-		"logs/screenshots",
-		"logs/fullHTML"
-	],
+	"timeout": {
+		"development": 10000,
+		"max": 60000
+	},
+	"slowMoMs": {
+		"min": 250
+	},
 	"errorsHandlers": [
 		{
 			"errorMessage": "net::ERR_INTERNET_DISCONNECTED",
@@ -29,8 +29,6 @@
 			"sleepingSeconds": 15
 		}
 	],
-	"screenshotsDir": "logs/screenshots",
-	"fullHTMLDir": "logs/fullHTML",
 	"chromeArgs": [
 		"--disable-gpu",
 		"--disable-setuid-sandbox",
