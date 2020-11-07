@@ -21,12 +21,12 @@
     "puppeteer": "^2.1.1",
     "puppeteer-extra": "3.1.15",
     "puppeteer-extra-plugin-anonymize-ua": "2.2.14",
-    "puppeteer-extra-plugin-stealth": "2.6.1",
+    "puppeteer-extra-plugin-stealth": "2.6.5",
     "random-js": "^2.1.0",
     "user-agents": "^1.0.559"
   },
   "devDependencies": {
-    "eslint-config-node-script-js": "^1.0.13",
+    "eslint-config-node-script-js": "^1.0.19",
     "node-fetch": "^2.6.1"
   },
   "repository": {

@@ -1,5 +1,3 @@
-/* eslint-disable complexity */
-/* eslint-disable require-jsdoc */
 const puppeteer = require('puppeteer-extra')
 const pluginStealth = require('puppeteer-extra-plugin-stealth')
 const pluginUA = require('puppeteer-extra-plugin-anonymize-ua')
@@ -17,15 +15,13 @@ const path = require('path')
 const defaults = require('../resources/defaults.json')
 
 class Spidering {
-
+	
 	constructor() {
 		if (process.env.NODE_ENV === undefined) process.env.NODE_ENV = defaults.environment
 		this.isDevelopmentEnv = (process.env.NODE_ENV === 'DEVELOPMENT')
-		process.setMaxListeners(100)
+    process.setMaxListeners(100)
 
-		// @ts-ignore
 		puppeteer.use(pluginStealth())
-		// @ts-ignore
 		puppeteer.use(pluginUA())
 
 		this.cawer = new Cawer()
@@ -67,7 +63,7 @@ class Spidering {
 	/**
 	 * @param {object} options
 	 */
-	async createBrowser(options) {
+	async createBrowser(options = {}) {
 		try {
 			if (options && options.proxy) defaults.chromeArgs.push(`--proxy-server=${options.proxy}`)
 
@@ -97,7 +93,7 @@ class Spidering {
 				this.browser = await puppeteer.launch(flags)
 			}
 		} catch (err) {
-			throw new Error(`Error on createBrowser: ${err}`)
+			throw new Error(`Error on createBrowser: ${JSON.stringify(err)}`)
 		}
 	}
 
@@ -419,14 +415,14 @@ class Spidering {
 	/**
 	 * @param {boolean} isError
 	 * @param {string} pathToSave
+	 * @param {boolean} [fullPage=true]
 	 */
 	async takeScreenshot(isError = false, pathToSave = undefined, fullPage = true) {
 		try {
 			let pathToSaveScreenshot = pathToSave
 
-			// TODO retirar os escapes e testar se funciona legal
 			if (isError) {
-				const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
+				const matches = this.url.match(/^https?:\/\/(?:www\.)?([^/?#]+)(?:[/?#]|$)/i)
 				const domain = matches && matches[1]
 				const todayDate = moment()
 					.format('YYYY-MM-DDTHH-mm-ss-SSS')
@@ -434,9 +430,10 @@ class Spidering {
 					.join(appRoot.path, 'logs', 'screenshots', `${domain}_${todayDate}_error.png`)
 			}
 
-			fs.ensureDirSync(pathToSaveScreenshot)
+			fs.ensureFileSync(pathToSaveScreenshot)
 			await this.page.screenshot({
 				path: pathToSaveScreenshot,
+				type: 'png',
 				fullPage,
 			})
 		} catch (err) {
@@ -456,13 +453,13 @@ class Spidering {
 			const bodyHTML = await this.page.evaluate(() => document.body.innerHTML)
 
 			if (isError) {
-				const matches = this.url.match(/^https?\:\/\/(?:www\.)?([^\/?#]+)(?:[\/?#]|$)/i)
+				const matches = this.url.match(/^https?:\/\/(?:www\.)?([^/?#]+)(?:[/?#]|$)/i)
 				const domain = matches && matches[1]
 				pathToSaveHTML = path
 					.join(appRoot.path, 'logs', 'html', `${domain}_${todayDate}_error.html`)
 			}
 
-			fs.ensureDirSync(pathToSaveHTML)
+			fs.ensureFileSync(pathToSaveHTML)
 			fs.writeFileSync(pathToSaveHTML, bodyHTML)
 		} catch (err) {
 			throw new Error(`Error on saveFullHtmlContent: ${err}`)

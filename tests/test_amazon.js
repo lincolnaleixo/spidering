@@ -11,11 +11,12 @@ const testOptions = jsonfile.readFileSync(path.join(rootPath, 'testsOptions.json
 	// const proxy = 'socks5://167.172.101.11:3129'
 	const cawer = new Cawer()
 	const spider = new Spider()
-	await spider.createBrowser({ blockAds: false })
+	await spider.createBrowser({
+		blockAds: false, testOptions,
+	})
 	// await spider.createBrowser()
-	await spider.createPage('clean', 60000)
-	console.log(await spider.navigateTo(url))
-	await cawer.sleep(3)
-	await spider.takeScreenshot(false, 'screenshot.png')
+	await spider.createPage('clean')
+	await spider.navigateTo(url)
+	await spider.takeScreenshot(true, './screen.jpg')
 	await spider.closeBrowser()
 })()
