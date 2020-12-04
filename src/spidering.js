@@ -63,7 +63,7 @@ class Spidering {
 
 	getFlags(options) {
 		const flags = {
-			headless: !this.isDevelopmentEnv,
+			headless: options.headless && !this.isDevelopmentEnv,
 			devtools: this.isDevelopmentEnv,
 			dumpio: this.isDevelopmentEnv,
 			ignoreHTTPSErrors: !this.isDevelopmentEnv,
@@ -393,6 +393,13 @@ class Spidering {
 
 	async waitForElement(element) {
 		await this.page.waitForElement(element)
+	}
+
+	async uploadFile(fileChooserElement, filePathToUpload) {
+		const [ fileChooser ] = await Promise
+			.all([ this.page.waitForFileChooser(), this.page.click(fileChooserElement) ])
+
+		await fileChooser.accept([ filePathToUpload ])
 	}
 
 }
