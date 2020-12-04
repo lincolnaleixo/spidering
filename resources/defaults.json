@@ -12,6 +12,7 @@
   "slowMoMs": {
     "min": 250
   },
+  "systemFolders": ["logs/screenshots","logs/html"],
   "errorsHandlers": [
     {
       "errorMessage": "net::ERR_INTERNET_DISCONNECTED",
