@@ -78,7 +78,7 @@ class Spidering {
 
 	async createBrowser(options = {}) {
 		try {
-			if (options && options.proxy) defaults.chromeArgs.push(`--proxy-server=${options.proxy}`)
+			if (options && options.proxy) defaults.chromeArgs.push(`--proxy-server =${options.proxy}`)
 
 			const flags = this.getFlags(options)
 
