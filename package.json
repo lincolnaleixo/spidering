@@ -11,7 +11,7 @@
   "main": "src/spidering.js",
   "dependencies": {
     "app-root-path": "^3.0.0",
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "cawer": "^1.0.9",
     "cheerio": "^1.0.0-rc.3",
     "download": "^8.0.0",
