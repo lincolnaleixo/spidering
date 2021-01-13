@@ -62,7 +62,7 @@ class Spidering {
 	}
 
 	getFlags(options) {
-		const flags = {
+		return {
 			headless: options.headless && !this.isDevelopmentEnv,
 			devtools: this.isDevelopmentEnv,
 			dumpio: this.isDevelopmentEnv,
@@ -71,10 +71,9 @@ class Spidering {
 			timeout: this.isDevelopmentEnv ? defaults.timeout.development : defaults.timeout.max,
 			defaultViewport: null,
 			args: defaults.chromeArgs,
-      userDataDir: path.join(rootPath,'chromeUserData'),
+      userDataDir: options.userData ? path.join(rootPath,'chromeUserData') : null,
 		}
 
-		return flags
 	}
 
 	async createBrowser(options = {}) {
