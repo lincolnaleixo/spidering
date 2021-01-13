@@ -29,6 +29,7 @@
     "--disable-gpu",
     "--disable-setuid-sandbox",
     "--disable-dev-shm-usage",
+    "--disable-web-security",
     "--force-device-scale-factor",
     "--ignore-certificate-errors",
     "--no-sandbox",

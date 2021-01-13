@@ -71,6 +71,7 @@ class Spidering {
 			timeout: this.isDevelopmentEnv ? defaults.timeout.development : defaults.timeout.max,
 			defaultViewport: null,
 			args: defaults.chromeArgs,
+      userDataDir: path.join(rootPath,'chromeUserData'),
 		}
 
 		return flags
