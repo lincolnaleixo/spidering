@@ -71,7 +71,7 @@ class Spidering {
 			timeout: this.isDevelopmentEnv ? defaults.timeout.development : defaults.timeout.max,
 			defaultViewport: null,
 			args: defaults.chromeArgs,
-      userDataDir: options.userData ? path.join(rootPath,'chromeUserData') : null,
+      		userDataDir: options.userData ? path.join(rootPath,'chromeUserData') : null,
 		}
 
 	}
@@ -97,10 +97,10 @@ class Spidering {
 		}
 	}
 
-	async createPage(pageType = 'full', defaultTimeout = 30000) {
+	async createPage(pageType = 'full', defaultTimeout = 30000,randomizeUserAgent = false) {
 		try {
 			this.page = await this.browser.newPage()
-			await this.setPageParameters(pageType)
+			await this.setPageParameters(pageType,randomizeUserAgent)
 			await this.page.setDefaultNavigationTimeout(defaultTimeout)
 		} catch (err) {
 			throw new Error(`Error on createPage: ${err}`)
@@ -138,7 +138,7 @@ class Spidering {
 		})
 	}
 
-	async setPageParameters(pageType) {
+	async setPageParameters(pageType,randomizeUserAgent) {
 		this.page.on('dialog', async (dialog) => {
 			await dialog.accept()
 		})
@@ -153,7 +153,7 @@ class Spidering {
 			downloadPath: path.join(rootPath, defaults.downloadsFolder),
 		})
 
-		await this.setRandomUserAgent()
+		if(randomizeUserAgent) await this.setRandomUserAgent()
 	}
 
 	async handleNavigateToErrors(url, err) {
@@ -221,6 +221,22 @@ class Spidering {
 		} catch (err) {
 			await this.takeScreenshot(true)
 			throw new Error(`Error on click: ${err}`)
+		}
+	}
+
+	async select(elementToSelect, valueToSelect, elementToWaitBefore, elementToWaitAfter, timeToWait = 120000) {
+		try {
+			if (elementToWaitBefore) {
+				await this.page.waitForSelector(elementToWaitBefore, { timeout: timeToWait })
+			}
+			await this.page.select(elementToSelect, valueToSelect)
+
+			if (!elementToWaitAfter) return
+
+			await this.page.waitForSelector(elementToWaitAfter, { timeout: timeToWait })
+		} catch (err) {
+			await this.takeScreenshot(true)
+			throw new Error(`Error on select: ${err}`)
 		}
 	}
 
