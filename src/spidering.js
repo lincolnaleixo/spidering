@@ -175,15 +175,16 @@ class Spidering {
 		return await this.page.$(selector) !== null
 	}
 
-	async navigateTo(url) {
+  async navigateTo(url,waitLoad=true) {
 		try {
 			this.url = url
-
-			const response = await this.page.goto(url, { waitUntil: [
+			let waitUntil = {}
+			if(waitLoad) waitUntil= [
 				'networkidle0',
 				'load',
 				'domcontentloaded',
-			] })
+			]
+			const response = await this.page.goto(url, waitUntil )
 			const headers = response.headers()
 			if (headers.status && headers.status !== '200') {
 				throw new Error(`Error on getting the page contents. Response status: ${headers.status}`)
