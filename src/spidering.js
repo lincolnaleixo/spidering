@@ -61,11 +61,11 @@ class Spidering {
 		}
 	}
 
-	getFlags(options) {
+  getFlags(options) {
 		return {
-			headless: options.headless && !this.isDevelopmentEnv,
-			devtools: this.isDevelopmentEnv,
-			dumpio: this.isDevelopmentEnv,
+			headless: options.headless || !this.isDevelopmentEnv,
+			devtools: true,
+			dumpio: false,
 			ignoreHTTPSErrors: !this.isDevelopmentEnv,
 			slowMo: options && options.slowMo ? options.slowMoMs : defaults.slowMoMs.min,
 			timeout: this.isDevelopmentEnv ? defaults.timeout.development : defaults.timeout.max,
@@ -73,7 +73,6 @@ class Spidering {
 			args: defaults.chromeArgs,
       		userDataDir: options.userData ? path.join(rootPath,'chromeUserData') : null,
 		}
-
 	}
 
 	async createBrowser(options = {}) {
@@ -93,7 +92,7 @@ class Spidering {
 				})
 			} else this.browser = await puppeteer.launch(flags)
 		} catch (err) {
-			throw new Error(`Error on createBrowser: ${JSON.stringify(err)}`)
+			throw new Error(`Error on createBrowser: ${err}`)
 		}
 	}
 
